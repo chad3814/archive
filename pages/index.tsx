@@ -8,7 +8,7 @@ export default function Index() {
   const [isEncrypted, setIsEncrypted] = useState<boolean>(false);
 
   useEffect(() => {
-    Archive.init({workerUrl: '/worker-bundle.js'});
+    Archive.init({workerUrl: '/libarchive/worker-bundle.js'});
   }, []);
 
   const makeList = (obj: FilesObject, prefix = '') => {
