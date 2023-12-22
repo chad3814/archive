@@ -4,31 +4,34 @@ import { CompressedFile } from 'libarchive.js/src/compressed-file';
 import { FilesObject } from 'libarchive.js/src/libarchive';
 
 export default function Index() {
-  const [archiveList, setArchiveList] = useState<string[]>([]);
+  const [archiveMap, setArchiveMap] = useState<Map<string,CompressedFile>>(new Map);
   const [isEncrypted, setIsEncrypted] = useState<boolean>(false);
 
   useEffect(() => {
     Archive.init({workerUrl: '/libarchive/worker-bundle.js'});
   }, []);
 
-  const makeList = (obj: FilesObject, prefix = '') => {
-    const list: string[] = [];
+  const makeMap = (obj: FilesObject, prefix = '') => {
+    const map = new Map<string, CompressedFile>;
     for (const name of Object.keys(obj)) {
       const value = obj[name];
       if (value instanceof CompressedFile) {
-        list.push(prefix + name);
+        map.set(prefix + name, value);
       } else {
-        list.push(...makeList(value as FilesObject, `${prefix}${name}/`));
+        const subMap = makeMap(value as FilesObject, `${prefix}${name}/`);
+        for (const [n, v] of subMap.entries()) {
+          map.set(n, v);
+        }
       }
     }
-    return list;
+    return map;
   }
   
   const fileChange = useCallback(
     async (evt: ChangeEvent<HTMLInputElement>) => {
       const file = evt.target.files?.[0]
       if (!file) {
-        setArchiveList([]);
+        setArchiveMap(new Map);
         return;
       }
       const archive = await Archive.open(file);
@@ -38,20 +41,52 @@ export default function Index() {
         return;
       }
       const fileObjects = await archive.getFilesObject();
-      const list = makeList(fileObjects);
+      const map = makeMap(fileObjects);
       setIsEncrypted(false);
-      setArchiveList(list);
+      setArchiveMap(map);
     }, []
   )
 
+  const getFilenames = useCallback(
+    () => {
+      if (!archiveMap) return [];
+      return [...archiveMap.keys()];
+    }, [archiveMap],
+  );
+
+  const extractFile = useCallback(
+    (filename) => {
+      if (!archiveMap.has(filename)) {
+        alert('brrr no such file');
+        return;
+      }
+      const match = filename.match(/(?<basename>[^\/]+)$/);
+      archiveMap.get(filename)!.extract().then(
+        (file) => {
+          const url = window.URL.createObjectURL(file);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = match.groups.basename ?? filename;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+        }
+      ).catch(
+        (err) => {
+          alert(`some error happened ${err}`);
+        }
+      )
+    }, [archiveMap]
+  )
   return (
     <>
       <p>Select an archive file</p>
       <input type='file' onChange={fileChange}/>
       {isEncrypted && <span>Archive is encrypted</span>}
       <ul>
-        {archiveList.map(
-          filename => <li key={filename}>{filename}</li>
+        {getFilenames().map(
+          filename => <li key={filename}><a href="#" onClick={() => extractFile(filename)}>{filename}</a></li>
         )}
       </ul>
     </>
