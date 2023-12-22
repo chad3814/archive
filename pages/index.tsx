@@ -16,7 +16,7 @@ export default function Index() {
     for (const name of Object.keys(obj)) {
       const value = obj[name];
       if (value instanceof CompressedFile) {
-        list.push(prefix + value);
+        list.push(prefix + name);
       } else {
         list.push(...makeList(value as FilesObject, `${prefix}${name}/`));
       }
