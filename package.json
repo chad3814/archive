@@ -2,8 +2,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "predev": "ln -sf node_modules/libarchive.js/dist/worker-bundle.js public/",
-    "prebuild": "rm worker-bundle.js && cp node_modules/libarchive.js/dist/worker-bundle.js public/",
+    "predev": "rm public/worker-bundle.js && cp node_modules/libarchive.js/dist/worker-bundle.js public/",
+    "prebuild": "rm public/worker-bundle.js && cp node_modules/libarchive.js/dist/worker-bundle.js public/",
     "build": "next build",
     "start": "next start"
   },
