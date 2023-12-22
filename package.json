@@ -2,8 +2,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "predev": "rm -rf public/libarchive/ && cp -r node_modules/libarchive.js/dist/* public/libarchive/",
-    "prebuild": "rm -rf public/libarchive/ && cp -r node_modules/libarchive.js/dist/* public/libarchive/",
+    "predev": "rm -rf public/libarchive/* && cp -r node_modules/libarchive.js/dist/* public/libarchive/",
+    "prebuild": "rm -rf public/libarchive/* && cp -r node_modules/libarchive.js/dist/* public/libarchive/",
     "build": "next build",
     "start": "next start"
   },
