@@ -1,2 +1,7 @@
 const withTM = require('next-transpile-modules')(['libarchive.js']);
-module.exports = withTM();
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+    output: 'standalone',
+    productionBrowserSourceMaps: true,
+}
+module.exports = withTM(nextConfig);
