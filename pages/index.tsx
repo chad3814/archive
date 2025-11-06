@@ -1,7 +1,16 @@
 import { useEffect, useCallback, ChangeEvent, useState, useRef } from 'react'
 import { Archive } from 'libarchive.js';
-import { CompressedFile } from 'libarchive.js/src/compressed-file';
-import { FilesObject } from 'libarchive.js/src/libarchive';
+
+interface CompressedFile {
+  name: string;
+  size: number;
+  lastModified: number;
+  extract(): Promise<File>;
+}
+
+interface FilesObject {
+    [key: string]: FilesObject | CompressedFile;
+};
 
 export default function Index() {
   const [archiveMap, setArchiveMap] = useState<Map<string,CompressedFile>>(new Map);
@@ -11,11 +20,15 @@ export default function Index() {
     Archive.init({workerUrl: '/libarchive/worker-bundle.js'});
   }, []);
 
+  const isCompressedFile = (value: FilesObject | CompressedFile): value is CompressedFile => {
+    return 'extract' in value && typeof (value as CompressedFile).extract === 'function';
+  }
+
   const makeMap = (obj: FilesObject, prefix = '') => {
     const map = new Map<string, CompressedFile>;
     for (const name of Object.keys(obj)) {
       const value = obj[name];
-      if (value instanceof CompressedFile) {
+      if (isCompressedFile(value)) {
         map.set(prefix + name, value);
       } else {
         const subMap = makeMap(value as FilesObject, `${prefix}${name}/`);
@@ -26,7 +39,7 @@ export default function Index() {
     }
     return map;
   }
-  
+
   const fileChange = useCallback(
     async (evt: ChangeEvent<HTMLInputElement>) => {
       const file = evt.target.files?.[0]
@@ -55,26 +68,27 @@ export default function Index() {
   );
 
   const extractFile = useCallback(
-    (filename) => {
+    (filename: string) => {
       if (!archiveMap.has(filename)) {
         alert('brrr no such file');
         return;
       }
       const match = filename.match(/(?<basename>[^\/]+)$/);
-      archiveMap.get(filename)!.extract().then(
-        (file) => {
+      const c = archiveMap.get(filename) as CompressedFile;
+      c.extract().then(
+        (file: File) => {
           const url = window.URL.createObjectURL(file);
           const a = document.createElement('a');
           a.style.display = 'none';
           a.href = url;
-          a.download = match.groups.basename ?? filename;
+          a.download = match?.groups?.basename ?? filename;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
         }
       ).catch(
-        (err) => {
-          alert(`some error happened ${err}`);
+        (err: unknown) => {
+          alert(`some error happened ${err as Error}`);
         }
       )
     }, [archiveMap]
@@ -82,7 +96,7 @@ export default function Index() {
   return (
     <>
       <p>Select an archive file</p>
-      <input type='file' onChange={fileChange}/>
+      <input type='file' onChange={fileChange} title="archive file"/>
       {isEncrypted && <span>Archive is encrypted</span>}
       <ul>
         {getFilenames().map(
