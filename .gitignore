@@ -37,3 +37,5 @@ next-env.d.ts
 
 worker-bundle.js
 wasm-gen/
+
+public/libarchive/
