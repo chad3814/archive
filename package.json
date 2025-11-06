@@ -1,5 +1,6 @@
 {
   "private": true,
+  "version": "1.0.0",
   "scripts": {
     "dev": "next dev",
     "predev": "rm -rf public/libarchive/* && cp -r node_modules/libarchive.js/dist/* public/libarchive/",
